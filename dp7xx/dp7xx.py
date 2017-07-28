@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #------------------------------------------------------------------------------
 """
 
@@ -26,13 +25,13 @@ def clamp(x, lo, hi):
 #------------------------------------------------------------------------------
 
 def minimal_float(x):
-  """reduce a float length by stripping un-needed characters"""
+  """reduce the string length of a float by stripping trailing 0s"""
   s = '%.2f' % x
   return s.rstrip('0').rstrip('.')
 
 #------------------------------------------------------------------------------
 
-MINIMAL_TIME = 0.001
+MINIMAL_TIME = 0.05 # 50ms
 
 class dp7xx(object):
 
@@ -157,7 +156,7 @@ class dp7xx(object):
     return ' '.join(s)
 
   def ramp_voltage(self, v0, v1, t, n):
-    """ramp[ voltage from v0 to v1 in t secs, with n steps"""
+    """ramp voltage from v0 to v1 in t secs, with n steps"""
     assert t > 0.0, 'time must be > 0.0 secs'
     assert n >= 1, 'n steps must be >= 1'
     delta_v = (v1 - v0)/n
@@ -219,17 +218,5 @@ class dp7xx(object):
     s.append('%.2fA' % self.ocp_level())
     s.append(('ok', 'tripped')[self.ocp_tripped()])
     return ' '.join(s)
-
-#------------------------------------------------------------------------------
-
-def main():
-  ps = dp7xx("/dev/ttyUSB0")
-  print ps
-  ps.output(True)
-  while True:
-    ramp_time = random.random() * 5.0
-    ps.ramp_voltage(0.0, 12.0, ramp_time, 5)
-
-main()
 
 #------------------------------------------------------------------------------

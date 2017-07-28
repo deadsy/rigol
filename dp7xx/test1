@@ -1,0 +1,14 @@
+#!/usr/bin/python
+
+import dp7xx
+import random
+
+def main():
+  ps = dp7xx.dp7xx("/dev/ttyUSB0")
+  print ps
+  ps.output(True)
+  while True:
+    ramp_time = random.random() * 5.0
+    ps.ramp_voltage(0.0, 12.0, ramp_time, 5)
+
+main()
