@@ -1,11 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import dp7xx
 import random
 
 def main():
   ps = dp7xx.dp7xx("/dev/ttyUSB0")
-  print ps
+  print(ps)
   ps.output(True)
   while True:
     ramp_time = random.random() * 5.0

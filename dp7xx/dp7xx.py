@@ -8,9 +8,8 @@ Tested with model DP712 version 00.01.03
 """
 #------------------------------------------------------------------------------
 
-import serial
 import time
-import random
+import serial
 
 #------------------------------------------------------------------------------
 
@@ -33,7 +32,8 @@ def minimal_float(x):
 
 MINIMAL_TIME = 0.05 # 50ms
 
-class dp7xx(object):
+class dp7xx:
+  """Control class for Rigol dp7xx power supplies"""
 
   def __init__(self, port, baud=9600, timeout=1):
     """connect to and identify the dp7xx power supply"""
@@ -55,15 +55,15 @@ class dp7xx(object):
         time.sleep(delta)
     self.last_time = time.time()
     # send the command to the serial port
-    self.serial.write(cmd)
+    self.serial.write(cmd.encode())
     # get a response is required
     if rsp:
-      return self.serial.readline().strip()
+      return self.serial.readline().strip().decode()
     return None
 
   def identify(self):
     """query the device identification"""
-    rsp = self.command(b'*IDN?\n')
+    rsp = self.command('*IDN?\n')
     x = rsp.split(',')
     assert len(x) == 4, 'bad length in identify response'
     self.model = x[1]
@@ -72,7 +72,7 @@ class dp7xx(object):
 
   def self_test(self):
     """query the self test result"""
-    rsp = self.command(b'*TST?\n')
+    rsp = self.command('*TST?\n')
     x = rsp.lower()
     self.st_result = ('pass', 'fail')['fail'in x]
 
@@ -80,19 +80,21 @@ class dp7xx(object):
     """turn the display on or off"""
     if ctrl is None:
       # query state
-      return self.command(b':DISP?\n') == 'ON'
+      return self.command(':DISP?\n') == 'ON'
     # control state
     state = ('OFF', 'ON')[ctrl]
-    self.command(b':DISP %s\n' % state, False)
+    self.command(':DISP %s\n' % state, False)
+    return ctrl
 
   def output(self, ctrl=None):
     """turn the channel 1 output on or off"""
     if ctrl is None:
       # query state
-      return self.command(b':OUTP:STAT? CH1\n') == 'ON'
+      return self.command(':OUTP:STAT? CH1\n') == 'ON'
     # control state
     state = ('OFF', 'ON')[ctrl]
-    self.command(b':OUTP:STAT CH1,%s\n' % state, False)
+    self.command(':OUTP:STAT CH1,%s\n' % state, False)
+    return ctrl
 
   def __str__(self):
     s = []
@@ -108,44 +110,47 @@ class dp7xx(object):
 
   def max_voltage(self):
     """return the maximum voltage"""
-    return float(self.command(b':VOLT? MAX\n'))
+    return float(self.command(':VOLT? MAX\n'))
 
   def voltage(self, val=None):
     """control the channel 1 voltage"""
     if val is None:
       # query the voltage
-      return float(self.command(b':VOLT?\n'))
+      return float(self.command(':VOLT?\n'))
     # set the voltage
     val = clamp(val, 0.0, self.max_v)
-    self.command(b':VOLT %s\n' % minimal_float(val), False)
+    self.command(':VOLT %s\n' % minimal_float(val), False)
+    return val
 
   def max_ovp(self):
     """return the maximum over voltage protection level"""
-    return float(self.command(b':VOLT:PROT? MAX\n'))
+    return float(self.command(':VOLT:PROT? MAX\n'))
 
   def ovp_level(self, val=None):
     """query/set the over voltage protection level"""
     if val is None:
       # query the voltage
-      return float(self.command(b':VOLT:PROT?\n'))
+      return float(self.command(':VOLT:PROT?\n'))
     # set the voltage
     val = clamp(val, 0.0, self.max_over_v)
-    self.command(b':VOLT:PROT %.2f\n' % val, False)
+    self.command(':VOLT:PROT %.2f\n' % val, False)
+    return val
 
   def ovp_ctrl(self, ctrl=None):
     """query/set the over voltage protection state"""
     if ctrl is None:
-      return self.command(b':VOLT:PROT:STAT?\n') == 'ON'
+      return self.command(':VOLT:PROT:STAT?\n') == 'ON'
     state = ('OFF', 'ON')[ctrl]
-    self.command(b':VOLT:PROT:STAT %s\n' % state, False)
+    self.command(':VOLT:PROT:STAT %s\n' % state, False)
+    return ctrl
 
   def ovp_tripped(self):
     """has the over voltage protection been tripped?"""
-    return self.command(b':VOLT:PROT:TRIP?\n') == 'YES'
+    return self.command(':VOLT:PROT:TRIP?\n') == 'YES'
 
   def ovp_clear(self):
     """clear the over voltage protection"""
-    self.command(b':VOLT:PROT:CLE\n', False)
+    self.command(':VOLT:PROT:CLE\n', False)
 
   def ovp_str(self):
     """return a string for the ovp state"""
@@ -162,7 +167,7 @@ class dp7xx(object):
     delta_v = (v1 - v0)/n
     delta_t = t / n
     v = v0
-    for i in range(n):
+    for _ in range(n):
       self.voltage(v)
       time.sleep(delta_t)
       v += delta_v
@@ -172,44 +177,47 @@ class dp7xx(object):
 
   def max_current(self):
     """return the maximum current"""
-    return float(self.command(b':CURR? MAX\n'))
+    return float(self.command(':CURR? MAX\n'))
 
   def current(self, val=None):
     """control the channel 1 current"""
     if val is None:
       # query the current
-      return float(self.command(b':CURR?\n'))
+      return float(self.command(':CURR?\n'))
     # set the current
     val = clamp(val, 0.0, self.max_i)
-    self.command(b':CURR %s\n' % minimal_float(val), False)
+    self.command(':CURR %s\n' % minimal_float(val), False)
+    return val
 
   def max_ocp(self):
     """return the maximum over current protection level"""
-    return float(self.command(b':CURR:PROT? MAX\n'))
+    return float(self.command(':CURR:PROT? MAX\n'))
 
   def ocp_level(self, val=None):
     """query/set the over current protection level"""
     if val is None:
       # query the current
-      return float(self.command(b':CURR:PROT?\n'))
+      return float(self.command(':CURR:PROT?\n'))
     # set the current
     val = clamp(val, 0.0, self.max_over_i)
-    self.command(b':CURR:PROT %.2f\n' % val, False)
+    self.command(':CURR:PROT %.2f\n' % val, False)
+    return val
 
   def ocp_ctrl(self, ctrl=None):
     """query/set the over current protection state"""
     if ctrl is None:
-      return self.command(b':CURR:PROT:STAT?\n') == 'ON'
+      return self.command(':CURR:PROT:STAT?\n') == 'ON'
     state = ('OFF', 'ON')[ctrl]
-    self.command(b':CURR:PROT:STAT %s\n' % state, False)
+    self.command(':CURR:PROT:STAT %s\n' % state, False)
+    return ctrl
 
   def ocp_tripped(self):
     """has the over current protection been tripped?"""
-    return self.command(b':CURR:PROT:TRIP?\n') == 'YES'
+    return self.command(':CURR:PROT:TRIP?\n') == 'YES'
 
   def ocp_clear(self):
     """clear the over current protection"""
-    self.command(b':CURR:PROT:CLE\n', False)
+    self.command(':CURR:PROT:CLE\n', False)
 
   def ocp_str(self):
     """return a string for the ocp state"""

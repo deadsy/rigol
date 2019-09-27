@@ -11,15 +11,12 @@ def main():
   ps.voltage(0.0)
   ps.output(True)
 
-  minimal_v = 12.0
   i = 0
-
   while True:
     i += 1
-    ps.voltage(minimal_v)
-    t = 0.8 + (random.random() * 0.7)
-    print(t, i)
-    time.sleep(t)
+    ps.voltage(12.0)
+    print(i)
+    time.sleep(30.0)
     ps.voltage(0.0)
     time.sleep(2.0)
 
